@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Department Manning Intelligence Platform - Interactive Billet and Personnel Gantt Timeline.">
+  <title>Manning Intelligence Platform</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- HEADER -->
+    <header class="app-header">
+      <div class="brand-section">
+        <button class="btn-icon-only" onclick="toggleSidebar()" id="sidebarToggleBtn" title="Toggle Sidebar" style="margin-right: 4px; padding: 6px;">
+          <svg id="sidebarToggleIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <div class="brand-logo">M</div>
+        <div class="brand-title-group">
+          <h1>Manning Intelligence Platform</h1>
+          <p>Academic & Personnel Operations</p>
+        </div>
+      </div>
+      
+      <div class="header-controls">
+        <!-- DB State Management -->
+        <button class="btn btn-secondary" onclick="exportData()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Export JSON
+        </button>
+        <button class="btn btn-secondary" onclick="exportCSV()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Export CSV
+        </button>
+        <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Import JSON
+        </button>
+        <input type="file" id="importFile" style="display: none;" accept=".json" onchange="importData(event)">
+        <button class="btn btn-secondary" onclick="openModal('csvImportModal')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Bulk CSV Import
+        </button>
+
+        <!-- Relocated metrics toggle button -->
+        <button class="btn btn-secondary" onclick="toggleMetrics()" id="metricsHeaderToggleBtn">
+          <svg id="metricsHeaderToggleIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15"></polyline>
+          </svg>
+          <span id="metricsHeaderToggleText">Hide Dashboard</span>
+        </button>
+
+        <button class="btn btn-danger" onclick="clearDatabase()">
+          Clear
+        </button>
+        
+        <div style="width: 1px; height: 24px; background-color: var(--border-color); margin: 0 8px;"></div>
+        
+        <!-- Theme Toggle -->
+        <button class="btn-icon-only" onclick="toggleTheme()" title="Toggle Light/Dark Theme">
+          <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+
+        <!-- Header collapse button -->
+        <button class="btn-icon-only" onclick="toggleHeader()" title="Collapse Header" id="headerCollapseBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15"></polyline>
+          </svg>
+        </button>
+      </div>
+    </header>
+    
+    <!-- SIDEBAR -->
+    <aside class="app-sidebar" id="appSidebar">
+      <div class="sidebar-inner">
+        <div>
+          <h2 class="sidebar-section-title">Timeline Setup</h2>
+          <div class="filter-group" style="margin-bottom: 12px;">
+            <label class="filter-label">Simulation Date</label>
+            <div class="search-input-wrapper">
+              <input type="date" class="search-input" style="padding-left: 12px;" id="simDateInput" onchange="updateSimulationDate(this.value)">
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h2 class="sidebar-section-title">Roster Filters</h2>
+          <div class="filter-group" style="margin-bottom: 12px;">
+            <label class="filter-label">Search</label>
+            <div class="search-input-wrapper">
+              <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" class="search-input" id="searchFilter" placeholder="Search billets or people..." oninput="triggerFilterRender()">
+            </div>
+          </div>
+          
+          <div class="filter-group" style="margin-bottom: 12px;">
+            <label class="filter-label">Program</label>
+            <select class="filter-select" id="programFilter" onchange="triggerFilterRender()">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          
+          <div class="filter-group" style="margin-bottom: 12px;">
+            <label class="filter-label">Type</label>
+            <select class="filter-select" id="typeFilter" onchange="triggerFilterRender()">
+              <option value="All">All Types</option>
+              <option value="Military">Military Only</option>
+              <option value="Civilian">Civilian Only</option>
+            </select>
+          </div>
+          
+          <div class="filter-group" style="margin-bottom: 12px;">
+            <label class="filter-label">Role</label>
+            <select class="filter-select" id="roleFilter" onchange="triggerFilterRender()">
+              <option value="All">All Roles</option>
+              <option value="Faculty">Faculty Only</option>
+              <option value="Staff">Staff Only</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">Status (Active on Sim Date)</label>
+            <select class="filter-select" id="statusFilter" onchange="triggerFilterRender()">
+              <option value="All">All Billets</option>
+              <option value="Filled">Filled</option>
+              <option value="Vacant">Vacant</option>
+              <option value="Overlap">Has Overlaps</option>
+            </select>
+          </div>
+        </div>
+        
+        <div>
+          <div class="sidebar-section-title">
+            <span>Personnel Roster</span>
+            <button class="btn btn-primary" style="padding: 4px 8px; font-size: 11px;" onclick="openPersonModal()">+ Add</button>
+          </div>
+          <div class="roster-list" id="personnelRoster">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+    </aside>
+    
+    <!-- MAIN INTERFACE -->
+    <main class="app-main">
+      
+      <!-- METRICS DASHBOARD -->
+      <div class="metrics-wrapper" id="metricsWrapper">
+        <section class="metrics-container" id="metricsContainer">
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-info">
+                <h3>Manning Fill Rate</h3>
+                <div class="metric-val" id="metricFillRate">0%</div>
+              </div>
+              <div class="metric-icon-wrapper">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-primary);"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+            </div>
+            
+            <div class="metric-card">
+              <div class="metric-info">
+                <h3>Active Vacancies</h3>
+                <div class="metric-val" id="metricVacancies">0</div>
+              </div>
+              <div class="metric-icon-wrapper">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--danger);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+              </div>
+            </div>
+            
+            <div class="metric-card">
+              <div class="metric-info" style="width: calc(100% - 36px);">
+                <h3>Group Fill Rates</h3>
+                <div id="metricGroupFillRates" style="font-size: 10px; font-weight: 700; line-height: 1.25; margin-top: 4px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; width: 100%; max-height: 38px; overflow-y: auto; color: var(--text-primary);">
+                  <!-- Dynamically populated -->
+                </div>
+              </div>
+              <div class="metric-icon-wrapper">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-primary);"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+              </div>
+            </div>
+            
+            <div class="metric-card">
+              <div class="metric-info" style="width: calc(100% - 36px);">
+                <h3>Roster Breakdown</h3>
+                <div id="metricRosterSummary" style="font-size: 10px; font-weight: 700; line-height: 1.25; margin-top: 4px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; width: 100%; max-height: 38px; overflow-y: auto; color: var(--text-primary);">
+                  <!-- Dynamically populated -->
+                </div>
+              </div>
+              <div class="metric-icon-wrapper">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--info);"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+      
+      <!-- TIMELINE HEADER & CONFIG -->
+      <section class="timeline-nav-bar">
+        <div class="timeline-view-settings">
+          <div class="toggle-switch-group">
+            <button class="toggle-option active" id="ayToggleBtn" onclick="toggleTimelineMode(true)">Academic Year</button>
+            <button class="toggle-option" id="cyToggleBtn" onclick="toggleTimelineMode(false)">Calendar Year</button>
+          </div>
+          
+          <div class="timeline-year-nav">
+            <button class="btn btn-secondary" style="padding: 6px 10px;" onclick="shiftStartYear(-1)">◄ Prev</button>
+            <span class="current-year-display" id="timelineRangeDisplay">CY 2025 - 2027</span>
+            <button class="btn btn-secondary" style="padding: 6px 10px;" onclick="shiftStartYear(1)">Next ►</button>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; margin-left: 8px;">
+            <span class="filter-label" style="white-space: nowrap; font-size: 11px; font-weight: 600;">Timeline Span:</span>
+            <select class="filter-select" id="timelineSpanSelect" onchange="updateTimelineSpan(this.value)" style="width: auto; padding: 6px 10px; font-size: 12px; font-weight: 600; background-color: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: var(--border-radius-sm); outline: none; cursor: pointer;">
+              <option value="3">3 Years</option>
+              <option value="5">5 Years</option>
+              <option value="7">7 Years</option>
+            </select>
+          </div>
+        </div>
+        
+        <button class="btn btn-primary" onclick="openBilletModal()">
+          + Add New Billet
+        </button>
+      </section>
+      
+      <!-- GANTT TIMELINE CHART -->
+      <section class="gantt-scroll-wrapper">
+        <div class="gantt-table" id="ganttTable">
+          <!-- Timelines are rendered here -->
+        </div>
+      </section>
+      
+    </main>
+    
+    <!-- HEADER PULL TAB -->
+    <button class="header-pull-tab" id="headerPullTab" onclick="toggleHeader()" title="Show Header Ribbon">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+      <span>Show Header</span>
+    </button>
+  </div>
+
+  <!-- MODALS -->
+  
+  <!-- BILLET MODAL -->
+  <div class="modal-overlay" id="billetModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="billetModalTitle">Add New Billet</h3>
+        <button class="modal-close" onclick="closeModal('billetModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="billetForm" onsubmit="saveBillet(event)">
+          <input type="hidden" id="billetFormId">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="billetFormCode">Billet Code</label>
+              <input type="text" id="billetFormCode" class="form-control" placeholder="e.g. ME-MIL-01" required>
+            </div>
+            <div class="form-group">
+              <label for="billetFormTitle">Duty Title</label>
+              <input type="text" id="billetFormTitle" class="form-control" placeholder="e.g. Program Director">
+            </div>
+            <div class="form-group">
+              <label for="billetFormProgram">Program</label>
+              <select id="billetFormProgram" class="form-control">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="billetFormType">Type</label>
+              <select id="billetFormType" class="form-control" onchange="adjustBilletRanks()">
+                <option value="Military">Military</option>
+                <option value="Civilian">Civilian</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="billetFormRole">Role</label>
+              <select id="billetFormRole" class="form-control">
+                <option value="Faculty">Faculty</option>
+                <option value="Staff">Staff</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="billetFormRank">Required Rank / Grade</label>
+              <select id="billetFormRank" class="form-control">
+                <!-- Populated dynamically based on Type selection -->
+              </select>
+            </div>
+          </div>
+          <div style="margin-top: 16px; display: flex; justify-content: space-between;">
+            <button type="button" class="btn btn-danger" id="deleteBilletBtn" style="display: none;" onclick="deleteBillet()">Delete Billet</button>
+            <button type="submit" class="btn btn-primary" style="margin-left: auto;">Save Billet</button>
+          </div>
+        </form>
+
+        <!-- Dynamic assignments editor for this Billet -->
+        <div class="modal-assignments-section" id="modalAssignmentsSection">
+          <h4 class="sidebar-section-title">Assignments for Billet</h4>
+          <div id="billetAssignmentList">
+            <!-- Dynamic list of assignments -->
+          </div>
+          
+          <h5 style="font-size: 12px; margin: 16px 0 8px 0; font-weight: 600; color: var(--text-secondary);">Add Person Assignment</h5>
+          <form id="assignmentForm" onsubmit="addAssignment(event)" class="form-grid" style="background-color: var(--bg-main); padding: 12px; border-radius: var(--border-radius-sm); border: 1px solid var(--border-color);">
+            <div class="form-group form-group-full">
+              <label for="assignPersonSelect">Select Person</label>
+              <select id="assignPersonSelect" class="form-control" required>
+                <!-- Populated by JS -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="assignStartDate">Start Date</label>
+              <input type="date" id="assignStartDate" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="assignEndDate">End Date</label>
+              <input type="date" id="assignEndDate" class="form-control" required>
+            </div>
+            <div class="form-group form-group-full" style="align-items: flex-end; margin-top: 8px;">
+              <button type="submit" class="btn btn-primary" style="padding: 6px 12px; font-size: 11px;">Assign Person</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERSONNEL MODAL -->
+  <div class="modal-overlay" id="personModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="personModalTitle">Add New Personnel</h3>
+        <button class="modal-close" onclick="closeModal('personModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="personForm" onsubmit="savePerson(event)">
+          <input type="hidden" id="personFormId">
+          <div class="form-grid">
+            <div class="form-group form-group-full">
+              <label for="personFormName">Full Name</label>
+              <input type="text" id="personFormName" class="form-control" placeholder="e.g. Maj Kyle Reese" required>
+            </div>
+            <div class="form-group">
+              <label for="personFormType">Type</label>
+              <select id="personFormType" class="form-control" onchange="adjustPersonRanks()">
+                <option value="Military">Military</option>
+                <option value="Civilian">Civilian</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="personFormRank">Rank / Grade</label>
+              <select id="personFormRank" class="form-control">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="personFormRole">Role</label>
+              <select id="personFormRole" class="form-control">
+                <option value="Faculty">Faculty</option>
+                <option value="Staff">Staff</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="personFormCareerField">Career Field</label>
+              <select id="personFormCareerField" class="form-control">
+                <option value="">None / Other</option>
+                <option value="62E">62E</option>
+                <option value="Rated">Rated</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div style="grid-column: 1 / -1; height: 1px; background-color: var(--border-color); margin: 8px 0;"></div>
+            
+            <div class="form-group">
+              <label for="personFormArrival">Tour Start (Estimated Arrival)</label>
+              <input type="date" id="personFormArrival" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="personFormDeparture">Tour End (Estimated Departure)</label>
+              <input type="date" id="personFormDeparture" class="form-control">
+            </div>
+          </div>
+          <div style="margin-top: 20px; display: flex; justify-content: space-between;">
+            <button type="button" class="btn btn-danger" id="deletePersonBtn" style="display: none;" onclick="deletePerson()">Delete Person</button>
+            <button type="submit" class="btn btn-primary" style="margin-left: auto;">Save Person</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- CSV IMPORT MODAL -->
+  <div class="modal-overlay" id="csvImportModal">
+    <div class="modal-card" style="width: 700px; max-width: 95%;">
+      <div class="modal-header">
+        <h3 class="modal-title">Bulk CSV Import Manager</h3>
+        <button class="modal-close" onclick="closeModal('csvImportModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">
+          Import Billets or Personnel records locally in the browser. Format your spreadsheets with the exact headers listed in each section, export as CSV, and select the file.
+        </p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <!-- Billets Column -->
+          <div style="background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--border-radius-sm); padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <h4 style="font-size: 14px; font-weight: 700; color: var(--accent-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                1. Import Billets CSV
+              </h4>
+              <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">
+                Populate organizational positions before assigning personnel.
+              </p>
+              <div style="font-size: 11px; margin-bottom: 16px;">
+                <strong>Expected CSV Column Headers:</strong>
+                <ul style="margin-left: 16px; margin-top: 4px; color: var(--text-secondary); line-height: 1.6;">
+                  <li><code>Code</code> (Required Billet code, e.g. ME-MIL-01)</li>
+                  <li><code>Title</code> (e.g. Program Director)</li>
+                  <li><code>Program</code> (ME or SE)</li>
+                  <li><code>Type</code> (Military or Civilian)</li>
+                  <li><code>Role</code> (Faculty or Staff)</li>
+                  <li><code>Required Rank</code> (e.g. Maj, Professor)</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div>
+              <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="document.getElementById('billetCsvInput').click()">
+                Upload Billets CSV
+              </button>
+              <input type="file" id="billetCsvInput" style="display: none;" accept=".csv" onchange="importBilletsCSV(event)">
+            </div>
+          </div>
+          
+          <!-- Personnel Column -->
+          <div style="background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--border-radius-sm); padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <h4 style="font-size: 14px; font-weight: 700; color: var(--accent-secondary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                2. Import Personnel CSV
+              </h4>
+              <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">
+                Upload roster members and optionally assign them immediately.
+              </p>
+              <div style="font-size: 11px; margin-bottom: 16px;">
+                <strong>Expected CSV Column Headers:</strong>
+                <ul style="margin-left: 16px; margin-top: 4px; color: var(--text-secondary); line-height: 1.6;">
+                  <li><code>Name</code> (Required full name)</li>
+                  <li><code>Rank</code> (e.g. Maj, GS-13)</li>
+                  <li><code>Type</code> (Military or Civilian)</li>
+                  <li><code>Role</code> (Faculty or Staff)</li>
+                  <li><code>Arrival Date</code> (Tour start date)</li>
+                  <li><code>Departure Date</code> (Tour end date)</li>
+                  <li><code>Assigned Billet Code</code> (Optional matching code)</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div>
+              <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="document.getElementById('personnelCsvInput').click()">
+                Upload Personnel CSV
+              </button>
+              <input type="file" id="personnelCsvInput" style="display: none;" accept=".csv" onchange="importPersonnelCSV(event)">
+            </div>
+          </div>
+        </div>
+        
+        <div id="csvImportSummary" style="margin-top: 20px; padding: 12px; border-radius: var(--border-radius-sm); border: 1px solid var(--border-color); display: none; font-size: 13px; line-height: 1.5;">
+          <!-- Summary output of upload -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('csvImportModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT STATE & APPLICATION ENGINE -->
+  <script src="app.js" defer></script>
+</body>
+</html>
