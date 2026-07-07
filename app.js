@@ -1540,7 +1540,7 @@ function getBilletOverlaps(billetId) {
   return overlapsSet;
 }
 
-//function calculateMetrics() {
+function calculateMetrics() {
   const totalBillets = state.billets.length;
   
   const fillRateEl = document.getElementById('metricFillRate');
@@ -1627,7 +1627,7 @@ function getBilletOverlaps(billetId) {
     }
   });
   
-  const summaryContainer = document.getElementById('metricRosterSummary');
+  if (!summaryContainer) return;
   summaryContainer.innerHTML = '';
   
   const rankOrder = [...MILITARY_RANKS, ...CIVILIAN_RANKS];
