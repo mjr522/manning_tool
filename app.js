@@ -1540,14 +1540,19 @@ function getBilletOverlaps(billetId) {
   return overlapsSet;
 }
 
-// KPIs PANEL UPDATER
-function calculateMetrics() {
+//function calculateMetrics() {
   const totalBillets = state.billets.length;
+  
+  const fillRateEl = document.getElementById('metricFillRate');
+  const vacanciesEl = document.getElementById('metricVacancies');
+  const groupFillContainer = document.getElementById('metricGroupFillRates');
+  const summaryContainer = document.getElementById('metricRosterSummary');
+  
   if (totalBillets === 0) {
-    document.getElementById('metricFillRate').textContent = '0%';
-    document.getElementById('metricVacancies').textContent = '0';
-    document.getElementById('metricGroupFillRates').innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Empty</div>';
-    document.getElementById('metricRosterSummary').innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Empty</div>';
+    if (fillRateEl) fillRateEl.textContent = '0%';
+    if (vacanciesEl) vacanciesEl.textContent = '0';
+    if (groupFillContainer) groupFillContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Empty</div>';
+    if (summaryContainer) summaryContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Empty</div>';
     return;
   }
   
@@ -1564,9 +1569,9 @@ function calculateMetrics() {
   const fillRate = Math.round((filledCount / totalBillets) * 100);
   const vacancies = totalBillets - filledCount;
   
-  document.getElementById('metricFillRate').textContent = `${fillRate}%`;
-  document.getElementById('metricVacancies').textContent = vacancies;
-
+  if (fillRateEl) fillRateEl.textContent = `${fillRate}%`;
+  if (vacanciesEl) vacanciesEl.textContent = vacancies;
+ 
   // Group fill rates (Program + Type on simulation date)
   const groupStats = {};
   state.billets.forEach(b => {
@@ -1586,22 +1591,22 @@ function calculateMetrics() {
     }
   });
   
-  const groupFillContainer = document.getElementById('metricGroupFillRates');
-  groupFillContainer.innerHTML = '';
-  
-  const sortedKeys = Object.keys(groupStats).sort();
-  sortedKeys.forEach(key => {
-    const stats = groupStats[key];
-    const pct = Math.round((stats.filled / stats.total) * 100);
-    const item = document.createElement('div');
-    item.style.whiteSpace = 'nowrap';
-    item.style.overflow = 'hidden';
-    item.style.textOverflow = 'ellipsis';
-    item.textContent = `${key}: ${pct}% (${stats.filled}/${stats.total})`;
-    groupFillContainer.appendChild(item);
-  });
-  if (sortedKeys.length === 0) {
-    groupFillContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Empty</div>';
+  if (groupFillContainer) {
+    groupFillContainer.innerHTML = '';
+    const sortedKeys = Object.keys(groupStats).sort();
+    sortedKeys.forEach(key => {
+      const stats = groupStats[key];
+      const pct = Math.round((stats.filled / stats.total) * 100);
+      const item = document.createElement('div');
+      item.style.whiteSpace = 'nowrap';
+      item.style.overflow = 'hidden';
+      item.style.textOverflow = 'ellipsis';
+      item.textContent = `${key}: ${pct}% (${stats.filled}/${stats.total})`;
+      groupFillContainer.appendChild(item);
+    });
+    if (sortedKeys.length === 0) {
+      groupFillContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Empty</div>';
+    }
   }
 
   // Grouping logic for roster breakdown (active assignments on simulation date)
