@@ -38,6 +38,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (state.metadataCollapsed === undefined) state.metadataCollapsed = false;
   if (state.headerCollapsed === undefined) state.headerCollapsed = false;
   if (state.timelineSpan === undefined) state.timelineSpan = 3;
+  if (state.activeTab === undefined) state.activeTab = 'timeline';
   
   applyTheme();
   applySidebarState();
@@ -50,7 +51,7 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('timelineSpanSelect').value = state.timelineSpan;
   
   setupEventListeners();
-  renderAll();
+  switchTab(state.activeTab);
 });
 
 function setupEventListeners() {
@@ -108,9 +109,8 @@ function normalizeState() {
   if (!state.personnel) state.personnel = [];
   else {
     state.personnel.forEach(p => {
-      if (p.careerField === undefined) {
-        p.careerField = '';
-      }
+      if (p.careerField === undefined) p.careerField = '';
+      if (p.contactLog === undefined) p.contactLog = [];
     });
   }
   if (!state.assignments) state.assignments = [];
@@ -123,6 +123,12 @@ function normalizeState() {
   if (state.metadataCollapsed === undefined) state.metadataCollapsed = false;
   if (state.headerCollapsed === undefined) state.headerCollapsed = false;
   if (state.timelineSpan === undefined) state.timelineSpan = 3;
+  if (state.activeTab === undefined) state.activeTab = 'timeline';
+  if (state.rosterViewMode === undefined) state.rosterViewMode = 'board';
+  if (state.pastColumnCollapsed === undefined) state.pastColumnCollapsed = false;
+  if (state.pastSort === undefined) state.pastSort = 'name';
+  if (state.currentSort === undefined) state.currentSort = 'arrival';
+  if (state.pipelineSort === undefined) state.pipelineSort = 'arrival';
 }
 
 // LOAD STATE FROM LOCAL STORAGE OR SEED DATA
@@ -140,6 +146,10 @@ function loadState() {
   } else {
     state = JSON.parse(JSON.stringify(MOCK_DATA));
     normalizeState();
+    // Prompt first-time users to load official data on boot
+    setTimeout(() => {
+      openModal('welcomeModal');
+    }, 400);
   }
 }
 
@@ -513,7 +523,8 @@ function importPersonnelCSV(event) {
           role,
           arrival,
           departure,
-          careerField
+          careerField,
+          contactLog: []
         });
         importCount++;
 
@@ -883,52 +894,352 @@ function renderTimelineHeaders() {
   table.appendChild(headerRow);
 }
 
-// RENDER PERSONNEL ROSTER
-function renderPersonnelRoster() {
-  const list = document.getElementById('personnelRoster');
-  list.innerHTML = '';
+// TAB SYSTEM INTERACTION LOGIC
+function switchTab(tabId) {
+  state.activeTab = tabId;
+  saveState();
   
-  const sorted = [...state.personnel].sort((a, b) => a.name.localeCompare(b.name));
+  // Update button active states
+  document.getElementById('tabBtnTimeline').classList.toggle('active', tabId === 'timeline');
+  document.getElementById('tabBtnRoster').classList.toggle('active', tabId === 'roster');
   
-  sorted.forEach(p => {
-    const activeAssignment = state.assignments.find(a => 
-      a.personnelId === p.id && 
-      state.simulationDate >= a.startDate && 
-      state.simulationDate <= a.endDate
-    );
-    
-    let assignmentText = 'Unassigned';
-    let badgeClass = 'badge-unassigned';
-    
-    if (activeAssignment) {
-      const billet = state.billets.find(b => b.id === activeAssignment.billetId);
-      if (billet) {
-        assignmentText = billet.code;
-        badgeClass = p.type === 'Military' ? 'badge-mil' : 'badge-civ';
+  // Update visibility panel classes
+  document.getElementById('tabPanelTimeline').classList.toggle('active', tabId === 'timeline');
+  document.getElementById('tabPanelRoster').classList.toggle('active', tabId === 'roster');
+  
+  // Add class to container to collapse/expand sidebar
+  const container = document.querySelector('.app-container');
+  if (tabId === 'roster') {
+    container.classList.add('roster-view-active');
+    toggleRosterView(state.rosterViewMode || 'board');
+  } else {
+    container.classList.remove('roster-view-active');
+    // Ensure sidebar state styles match preferences
+    applySidebarState();
+    renderAll();
+  }
+}
+
+// ROSTER SUB-VIEW SWITCHER
+function toggleRosterView(mode) {
+  state.rosterViewMode = mode;
+  saveState();
+  
+  // Update toggle option buttons
+  const boardBtn = document.getElementById('rosterViewBoardBtn');
+  const tableBtn = document.getElementById('rosterViewTableBtn');
+  if (boardBtn) boardBtn.classList.toggle('active', mode === 'board');
+  if (tableBtn) tableBtn.classList.toggle('active', mode === 'table');
+  
+  // Show / Hide containers
+  const boardView = document.getElementById('rosterBoardView');
+  const tableView = document.getElementById('rosterTableView');
+  if (boardView) boardView.style.display = mode === 'board' ? 'block' : 'none';
+  if (tableView) tableView.style.display = mode === 'table' ? 'block' : 'none';
+  
+  // Map dropdown values
+  const sortPastEl = document.getElementById('sortPast');
+  const sortCurrentEl = document.getElementById('sortCurrent');
+  const sortPipelineEl = document.getElementById('sortPipeline');
+  if (sortPastEl) sortPastEl.value = state.pastSort || 'name';
+  if (sortCurrentEl) sortCurrentEl.value = state.currentSort || 'arrival';
+  if (sortPipelineEl) sortPipelineEl.value = state.pipelineSort || 'arrival';
+  
+  applyPastColumnState();
+  renderPersonnelRoster();
+}
+
+function togglePastColumn() {
+  state.pastColumnCollapsed = !state.pastColumnCollapsed;
+  saveState();
+  applyPastColumnState();
+}
+
+function applyPastColumnState() {
+  const col = document.getElementById('colPast');
+  if (col) {
+    col.classList.toggle('collapsed', state.pastColumnCollapsed);
+    const svg = col.querySelector('.board-column-header .column-collapse-btn svg');
+    if (svg) {
+      if (state.pastColumnCollapsed) {
+        svg.innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>'; // Chevron right (expand)
+      } else {
+        svg.innerHTML = '<polyline points="15 18 9 12 15 6"></polyline>'; // Chevron left (collapse)
       }
     }
-    
-    const item = document.createElement('div');
-    item.className = 'roster-item';
-    item.onclick = () => openPersonModal(p.id);
-    
-    const rankLabel = p.rank || 'No Rank';
-    const careerLabel = p.careerField ? ` | ${p.careerField}` : '';
-    const tourStart = p.arrival ? formatShortDate(p.arrival) : 'TBD';
-    const tourEnd = p.departure ? formatShortDate(p.departure) : 'TBD';
-    
-    item.innerHTML = `
-      <div class="roster-name">
-        <span>${p.name}</span>
-        <span class="badge ${badgeClass}">${rankLabel}${careerLabel}</span>
-      </div>
-      <div class="roster-meta">
-        <span>${assignmentText}</span>
-        <span>Tour: ${tourStart} - ${tourEnd}</span>
-      </div>
-    `;
-    list.appendChild(item);
+  }
+}
+
+function changeColumnSort(column, criteria) {
+  if (column === 'past') state.pastSort = criteria;
+  if (column === 'current') state.currentSort = criteria;
+  if (column === 'pipeline') state.pipelineSort = criteria;
+  saveState();
+  renderPersonnelRoster();
+}
+
+// RENDER PERSONNEL ROSTER
+function renderPersonnelRoster() {
+  const searchVal = document.getElementById('rosterSearchFilter')?.value.toLowerCase() || '';
+  
+  const filtered = state.personnel.filter(p => {
+    if (!searchVal) return true;
+    return p.name.toLowerCase().includes(searchVal) ||
+           (p.rank && p.rank.toLowerCase().includes(searchVal)) ||
+           (p.careerField && p.careerField.toLowerCase().includes(searchVal)) ||
+           (p.role && p.role.toLowerCase().includes(searchVal)) ||
+           (p.type && p.type.toLowerCase().includes(searchVal));
   });
+  
+  const sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+  
+  if (state.rosterViewMode === 'table') {
+    const tbody = document.getElementById('personnelTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
+    if (sorted.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); font-style: italic; padding: 24px;">No personnel records found.</td></tr>`;
+      return;
+    }
+    
+    sorted.forEach(p => {
+      const activeAssignment = state.assignments.find(a => 
+        a.personnelId === p.id && 
+        state.simulationDate >= a.startDate && 
+        state.simulationDate <= a.endDate
+      );
+      
+      let activeBilletText = 'Unassigned';
+      let badgeClass = 'badge-unassigned';
+      
+      if (activeAssignment) {
+        const billet = state.billets.find(b => b.id === activeAssignment.billetId);
+        if (billet) {
+          activeBilletText = `${billet.code} - ${billet.title || 'No Title'}`;
+          badgeClass = p.type === 'Military' ? 'badge-mil' : 'badge-civ';
+        }
+      }
+      
+      const rankLabel = p.rank || 'None';
+      const careerLabel = p.careerField || 'None';
+      const tourStart = p.arrival ? p.arrival : 'TBD';
+      const tourEnd = p.departure ? p.departure : 'TBD';
+      
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight: 600; color: var(--text-primary);">${p.name}</td>
+        <td><span class="badge ${p.type === 'Military' ? 'badge-mil' : 'badge-civ'}">${rankLabel}</span></td>
+        <td>${p.type}</td>
+        <td>${p.role}</td>
+        <td><span class="badge ${p.careerField ? 'badge-mil' : 'badge-unassigned'}">${careerLabel}</span></td>
+        <td>${tourStart}</td>
+        <td>${tourEnd}</td>
+        <td><span class="badge ${badgeClass}">${activeBilletText}</span></td>
+        <td style="text-align: right; white-space: nowrap;">
+          <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px; margin-right: 4px;" onclick="openPersonModal('${p.id}')">Edit</button>
+          <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deletePersonFromTable('${p.id}')">Delete</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } else {
+    // BOARD VIEW RENDERING
+    const listPast = document.getElementById('listPast');
+    const listCurrent = document.getElementById('listCurrent');
+    const listPipeline = document.getElementById('listPipeline');
+    
+    if (!listPast || !listCurrent || !listPipeline) return;
+    
+    listPast.innerHTML = '';
+    listCurrent.innerHTML = '';
+    listPipeline.innerHTML = '';
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const pastArr = [];
+    const currentArr = [];
+    const pipelineArr = [];
+    
+    sorted.forEach(p => {
+      const arr = p.arrival ? new Date(p.arrival + 'T00:00:00') : null;
+      const dep = p.departure ? new Date(p.departure + 'T00:00:00') : null;
+      
+      let column = 'current';
+      if (dep && dep < today) {
+        column = 'past';
+      } else if (arr && arr > today) {
+        column = 'pipeline';
+      }
+      
+      if (column === 'past') {
+        pastArr.push(p);
+      } else if (column === 'pipeline') {
+        pipelineArr.push(p);
+      } else {
+        currentArr.push(p);
+      }
+    });
+    
+    // Independent sorting rules
+    // Past sorting
+    if (state.pastSort === 'departure') {
+      pastArr.sort((a, b) => (b.departure || '').localeCompare(a.departure || ''));
+    } else {
+      pastArr.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    
+    // Current sorting
+    if (state.currentSort === 'arrival') {
+      currentArr.sort((a, b) => (a.arrival || '9999-12-31').localeCompare(b.arrival || '9999-12-31'));
+    } else if (state.currentSort === 'departure') {
+      currentArr.sort((a, b) => (a.departure || '9999-12-31').localeCompare(b.departure || '9999-12-31'));
+    } else {
+      currentArr.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    
+    // Pipeline sorting
+    if (state.pipelineSort === 'arrival') {
+      pipelineArr.sort((a, b) => (a.arrival || '9999-12-31').localeCompare(b.arrival || '9999-12-31'));
+    } else {
+      pipelineArr.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    
+    const renderCard = (p, container) => {
+      const activeAssignment = state.assignments.find(a => 
+        a.personnelId === p.id && 
+        state.simulationDate >= a.startDate && 
+        state.simulationDate <= a.endDate
+      );
+      
+      let billetText = 'Unassigned';
+      let billetClass = 'badge-unassigned';
+      if (activeAssignment) {
+        const billet = state.billets.find(b => b.id === activeAssignment.billetId);
+        if (billet) {
+          billetText = billet.code;
+          billetClass = p.type === 'Military' ? 'badge-mil' : 'badge-civ';
+        }
+      }
+      
+      const rankLabel = p.rank || 'No Rank';
+      const careerLabel = p.careerField || 'None';
+      const arrivalStr = p.arrival ? p.arrival : 'TBD';
+      const departureStr = p.departure ? p.departure : 'TBD';
+      
+      let careerClass = 'badge-unassigned';
+      if (p.careerField === 'Rated') {
+        careerClass = 'badge-rated';
+      } else if (p.careerField === 'Other') {
+        careerClass = 'badge-other';
+      } else if (p.careerField === '62E') {
+        careerClass = 'badge-62e';
+      }
+      
+      const isPipeline = (container === listPipeline);
+      let lastContactStr = 'Never';
+      let glowRed = false;
+      
+      if (isPipeline) {
+        const logs = p.contactLog || [];
+        const arrDate = p.arrival ? new Date(p.arrival + 'T00:00:00') : null;
+        
+        if (logs.length > 0) {
+          const sortedLogs = [...logs].sort((a, b) => b.date.localeCompare(a.date));
+          const latestLog = sortedLogs[0];
+          
+          const lastContactDate = new Date(latestLog.date + 'T00:00:00');
+          const diffMs = today.getTime() - lastContactDate.getTime();
+          const diffDays = Math.max(0, diffMs / (1000 * 60 * 60 * 24));
+          const diffMonths = (diffDays / 30.4375).toFixed(1);
+          lastContactStr = `${diffMonths} months ago`;
+          
+          if (arrDate) {
+            const timeSinceContact = today.getTime() - lastContactDate.getTime();
+            const timeUntilArrival = arrDate.getTime() - today.getTime();
+            
+            const oneYearMs = 365 * 24 * 60 * 60 * 1000;
+            const twoYearsMs = 2 * oneYearMs;
+            const sixMonthsMs = 182.5 * 24 * 60 * 60 * 1000;
+            
+            if (timeSinceContact > oneYearMs && timeUntilArrival > twoYearsMs) {
+              glowRed = true;
+            } else if (timeSinceContact > sixMonthsMs && timeUntilArrival <= twoYearsMs) {
+              glowRed = true;
+            }
+          }
+        } else if (arrDate) {
+          // If never contacted, treat last contact as infinity and trigger alert based on arrival year
+          const timeUntilArrival = arrDate.getTime() - today.getTime();
+          const twoYearsMs = 2 * 365 * 24 * 60 * 60 * 1000;
+          glowRed = true; 
+        }
+      }
+      
+      const card = document.createElement('div');
+      card.className = 'person-card';
+      card.style.cursor = 'pointer';
+      card.onclick = () => openPersonModal(p.id);
+      
+      const datesStr = `${formatShortDate(arrivalStr)} - ${formatShortDate(departureStr)}`;
+      
+      if (isPipeline) {
+        card.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 4px; width: 100%;">
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; overflow: hidden; white-space: nowrap; width: 100%;" title="${p.name} | Career: ${careerLabel} | Billet: ${billetText} | Tour: ${datesStr} | Rank: ${rankLabel}">
+              <span style="font-weight: 700; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 110px;">${p.name}</span>
+              <span class="badge ${careerClass}" style="font-size: 8px; padding: 1px 4px; flex-shrink: 0;">${careerLabel}</span>
+              <span class="badge ${billetClass}" style="font-size: 8px; padding: 1px 4px; flex-shrink: 0;">${billetText}</span>
+              <span style="font-size: 9px; color: var(--text-muted); flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px;">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                ${datesStr}
+              </span>
+              <span class="badge ${p.type === 'Military' ? 'badge-mil' : 'badge-civ'}" style="font-size: 8px; padding: 1px 4px; flex-shrink: 0; margin-left: auto;">${rankLabel}</span>
+            </div>
+            <div class="${glowRed ? 'glow-red' : ''}" style="font-size: 9px; display: inline-flex; align-items: center; gap: 3px; font-weight: 600; ${glowRed ? '' : 'color: var(--text-muted);'}">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Last Contact: ${lastContactStr}
+            </div>
+          </div>
+        `;
+      } else {
+        card.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; overflow: hidden; white-space: nowrap; width: 100%;" title="${p.name} | Career: ${careerLabel} | Billet: ${billetText} | Tour: ${datesStr} | Rank: ${rankLabel}">
+            <span style="font-weight: 700; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 110px;">${p.name}</span>
+            <span class="badge ${careerClass}" style="font-size: 8px; padding: 1px 4px; flex-shrink: 0;">${careerLabel}</span>
+            <span class="badge ${billetClass}" style="font-size: 8px; padding: 1px 4px; flex-shrink: 0;">${billetText}</span>
+            <span style="font-size: 9px; color: var(--text-muted); flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px;">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              ${datesStr}
+            </span>
+            <span class="badge ${p.type === 'Military' ? 'badge-mil' : 'badge-civ'}" style="font-size: 8px; padding: 1px 4px; flex-shrink: 0; margin-left: auto;">${rankLabel}</span>
+          </div>
+        `;
+      }
+      container.appendChild(card);
+    };
+    
+    pastArr.forEach(p => renderCard(p, listPast));
+    currentArr.forEach(p => renderCard(p, listCurrent));
+    pipelineArr.forEach(p => renderCard(p, listPipeline));
+    
+    document.getElementById('countPast').textContent = pastArr.length;
+    document.getElementById('countCurrent').textContent = currentArr.length;
+    document.getElementById('countPipeline').textContent = pipelineArr.length;
+  }
+}
+
+function deletePersonFromTable(id) {
+  if (confirm("Are you sure you want to delete this person? This will also remove any assignments mapped to this individual.")) {
+    state.personnel = state.personnel.filter(p => p.id !== id);
+    state.assignments = state.assignments.filter(a => a.personnelId !== id);
+    saveState();
+    renderPersonnelRoster();
+    if (state.activeTab === 'timeline') {
+      renderAll();
+    }
+  }
 }
 
 // RENDER GANTT CHART CHANNELS
@@ -1742,6 +2053,20 @@ function openPersonModal(id = null) {
     adjustPersonRanks(p.rank);
     
     document.getElementById('deletePersonBtn').style.display = 'block';
+    document.getElementById('duplicatePersonBtn').style.display = 'block';
+    
+    // Setup and display contact logs
+    document.getElementById('personContactLogWrapper').style.display = 'block';
+    
+    // Set default date picker to local calendar today
+    const localToday = new Date();
+    const localY = localToday.getFullYear();
+    const localM = String(localToday.getMonth() + 1).padStart(2, '0');
+    const localD = String(localToday.getDate()).padStart(2, '0');
+    document.getElementById('contactLogDate').value = `${localY}-${localM}-${localD}`;
+    document.getElementById('contactLogNotes').value = '';
+    
+    renderContactLog(p);
   } else {
     document.getElementById('personModalTitle').textContent = 'Add New Personnel Record';
     document.getElementById('personFormId').value = '';
@@ -1749,8 +2074,121 @@ function openPersonModal(id = null) {
     adjustPersonRanks();
     
     document.getElementById('deletePersonBtn').style.display = 'none';
+    document.getElementById('duplicatePersonBtn').style.display = 'none';
+    document.getElementById('personContactLogWrapper').style.display = 'none';
   }
   openModal('personModal');
+}
+
+function renderContactLog(p) {
+  const list = document.getElementById('contactLogList');
+  if (!list) return;
+  list.innerHTML = '';
+  
+  const logs = p.contactLog || [];
+  const sortedLogs = [...logs].sort((a, b) => b.date.localeCompare(a.date));
+  
+  if (sortedLogs.length === 0) {
+    list.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-style: italic; font-size: 11px; padding: 12px 0;">No contact logs entered.</div>`;
+    return;
+  }
+  
+  sortedLogs.forEach(entry => {
+    const entryEl = document.createElement('div');
+    entryEl.style.backgroundColor = 'var(--bg-main)';
+    entryEl.style.border = '1px solid var(--border-color)';
+    entryEl.style.padding = '8px 12px';
+    entryEl.style.borderRadius = 'var(--border-radius-sm)';
+    entryEl.style.fontSize = '11px';
+    entryEl.style.lineHeight = '1.4';
+    
+    entryEl.innerHTML = `
+      <div style="display: flex; justify-content: space-between; color: var(--text-secondary); margin-bottom: 4px;">
+        <strong style="color: var(--text-primary);">${entry.author}</strong>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span>${entry.date}</span>
+          <button type="button" onclick="deleteContactLogEntry('${p.id}', '${entry.id}')" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 11px; font-weight: 700; padding: 0 4px; line-height: 1;" title="Delete log entry">&times;</button>
+        </div>
+      </div>
+      <div style="color: var(--text-secondary); white-space: pre-wrap;">${entry.notes}</div>
+    `;
+    list.appendChild(entryEl);
+  });
+}
+
+function deleteContactLogEntry(personId, entryId) {
+  if (confirm("Are you sure you want to delete this contact log entry?")) {
+    const p = state.personnel.find(pers => pers.id === personId);
+    if (p && p.contactLog) {
+      p.contactLog = p.contactLog.filter(entry => entry.id !== entryId);
+      saveState();
+      renderContactLog(p);
+      renderPersonnelRoster();
+    }
+  }
+}
+
+function addContactLogEntry() {
+  const id = document.getElementById('personFormId').value;
+  if (!id) return;
+  
+  const p = state.personnel.find(pers => pers.id === id);
+  if (!p) return;
+  
+  const author = document.getElementById('contactLogAuthor').value.trim();
+  const date = document.getElementById('contactLogDate').value;
+  const notes = document.getElementById('contactLogNotes').value.trim();
+  
+  if (!author || !notes) {
+    alert("Please fill out both the Author/Initials and Notes fields.");
+    return;
+  }
+  
+  const newEntry = {
+    id: 'L-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+    date: date || new Date().toISOString().split('T')[0],
+    author: author,
+    notes: notes
+  };
+  
+  if (!p.contactLog) p.contactLog = [];
+  p.contactLog.push(newEntry);
+  
+  saveState();
+  renderContactLog(p);
+  
+  // Clear only notes
+  document.getElementById('contactLogNotes').value = '';
+  
+  // Update parents
+  renderPersonnelRoster();
+}
+
+function duplicatePerson() {
+  const nameInput = document.getElementById('personFormName');
+  let name = nameInput.value;
+  
+  // Cleanly suggest Tour 2 progression
+  if (!name.includes('[Tour 2]') && !name.includes('(T2)')) {
+    nameInput.value = name + ' [Tour 2]';
+  } else if (name.includes('[Tour 2]')) {
+    nameInput.value = name.replace('[Tour 2]', '[Tour 3]');
+  } else if (name.includes('(T2)')) {
+    nameInput.value = name.replace('(T2)', '(T3)');
+  } else {
+    nameInput.value = name + ' [Copy]';
+  }
+  
+  // Clear the ID so saving creates a brand new person record
+  document.getElementById('personFormId').value = '';
+  
+  // Set modal title to guide user action
+  document.getElementById('personModalTitle').textContent = 'Add Duplicate Personnel Record';
+  
+  // Hide delete and copy button since it is now in unsaved cloning state
+  document.getElementById('deletePersonBtn').style.display = 'none';
+  document.getElementById('duplicatePersonBtn').style.display = 'none';
+  document.getElementById('personContactLogWrapper').style.display = 'none';
 }
 
 function savePerson(e) {
@@ -1772,11 +2210,19 @@ function savePerson(e) {
   if (id) {
     const idx = state.personnel.findIndex(p => p.id === id);
     if (idx !== -1) {
-      state.personnel[idx] = { id, name, rank, type, role, arrival, departure, careerField };
+      const existing = state.personnel[idx];
+      state.personnel[idx] = { 
+        ...existing,
+        name, rank, type, role, arrival, departure, careerField,
+        contactLog: existing.contactLog || []
+      };
     }
   } else {
     const newId = 'P-' + Date.now();
-    state.personnel.push({ id: newId, name, rank, type, role, arrival, departure, careerField });
+    state.personnel.push({ 
+      id: newId, name, rank, type, role, arrival, departure, careerField,
+      contactLog: []
+    });
   }
   
   saveState();

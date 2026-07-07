@@ -393,6 +393,21 @@ body {
   color: #fbbf24;
 }
 
+.badge-rated {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+
+.badge-other {
+  background-color: rgba(139, 92, 246, 0.15);
+  color: #8b5cf6;
+}
+
+.badge-62e {
+  background-color: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+}
+
 /* MAIN CONTAINER */
 .app-main {
   padding: 24px;
@@ -1171,4 +1186,269 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+/* APP TAB NAVIGATION & CONTENT */
+.app-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 20px;
+  padding-bottom: 8px;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: var(--border-radius-sm);
+  transition: var(--transition-smooth);
+}
+
+.tab-btn.active {
+  background-color: var(--accent-primary);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.tab-btn:hover:not(.active) {
+  background-color: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* PERSONNEL TAB VIEW STYLING */
+.roster-tab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 16px;
+}
+
+.roster-tab-title-group h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.roster-tab-title-group p {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.roster-tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.roster-table-container {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  overflow-x: auto;
+  box-shadow: var(--shadow-md);
+}
+
+.roster-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 12px;
+}
+
+.roster-table th, 
+.roster-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.roster-table th {
+  background-color: var(--bg-card-hover);
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.roster-table tbody tr {
+  transition: var(--transition-smooth);
+}
+
+.roster-table tbody tr:hover {
+  background-color: var(--bg-card-hover);
+}
+
+.roster-table td {
+  color: var(--text-primary);
+}
+
+.roster-table td .btn {
+  padding: 6px 12px;
+  font-size: 11px;
+}
+
+/* HIDE SIDEBAR ON ROSTER VIEW */
+.app-container.roster-view-active .app-sidebar {
+  width: 0 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  border-right-width: 0 !important;
+  border-right-color: transparent !important;
+}
+
+.app-container.roster-view-active #sidebarToggleBtn {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* ROSTER KANBAN BOARD SYSTEM */
+.roster-board {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  min-height: 580px;
+  align-items: stretch;
+}
+
+.board-column {
+  flex: 1;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  display: flex;
+  flex-direction: column;
+  min-width: 250px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.board-column.collapsed {
+  flex: 0 0 48px;
+  min-width: 48px;
+  background-color: rgba(21, 29, 48, 0.4);
+}
+
+.board-column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-card-hover);
+}
+
+.column-title {
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+}
+
+.column-count {
+  background-color: var(--bg-main);
+  color: var(--text-secondary);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  border: 1px solid var(--border-color);
+}
+
+.column-collapse-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: 4px;
+  transition: var(--transition-smooth);
+}
+
+.column-collapse-btn:hover {
+  color: var(--text-primary);
+  background-color: var(--border-color);
+}
+
+/* Collapsed Header Rotation */
+.board-column-header-collapsed {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0;
+  color: var(--text-secondary);
+  cursor: pointer;
+  height: 100%;
+}
+
+.board-column.collapsed .board-column-header-collapsed {
+  display: flex;
+}
+
+.board-column.collapsed .board-column-header,
+.board-column.collapsed .board-cards-list {
+  display: none !important;
+}
+
+.collapsed-title {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  text-transform: uppercase;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  margin-top: 16px;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+
+.board-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  overflow-y: auto;
+  flex-grow: 1;
+  max-height: 62vh;
+}
+
+/* COMPACT PERSONNEL CARDS */
+.person-card {
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: 6px 12px;
+  transition: var(--transition-smooth);
+}
+
+.person-card:hover {
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.glow-red {
+  color: #f87171 !important;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(248, 113, 113, 0.4);
 }

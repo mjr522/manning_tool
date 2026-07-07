@@ -40,11 +40,14 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           Export CSV
         </button>
-        <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Import JSON
-        </button>
-        <input type="file" id="importFile" style="display: none;" accept=".json" onchange="importData(event)">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; position: relative;">
+          <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()" style="width: 100%;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Import JSON
+          </button>
+          <a href="https://usafa0.sharepoint.com/sites/DFME/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FDFME%2FShared%20Documents%2FOperations%2FPersonnel%2FManning%20Projections&viewid=6adda10f%2D99bd%2D452a%2Dbb7f%2D69b2cfee8787" target="_blank" style="font-size: 9px; color: var(--accent-primary); text-decoration: underline; font-weight: 600;" title="Go to SharePoint Source Folder">SharePoint Source</a>
+          <input type="file" id="importFile" style="display: none;" accept=".json" onchange="importData(event)">
+        </div>
         <button class="btn btn-secondary" onclick="openModal('csvImportModal')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           Bulk CSV Import
@@ -83,6 +86,15 @@
     <!-- SIDEBAR -->
     <aside class="app-sidebar" id="appSidebar">
       <div class="sidebar-inner">
+        <!-- SharePoint Sync Notice Banner -->
+        <div style="background-color: rgba(99, 102, 241, 0.06); border: 1px dashed var(--accent-primary); padding: 12px; border-radius: var(--border-radius-sm); font-size: 11px; line-height: 1.4; color: var(--text-secondary);">
+          <strong>SharePoint Manning Data:</strong><br>
+          Import the latest JSON database file from <a href="https://usafa0.sharepoint.com/sites/DFME/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FDFME%2FShared%20Documents%2FOperations%2FPersonnel%2FManning%20Projections&viewid=6adda10f%2D99bd%2D452a%2Dbb7f%2D69b2cfee8787" target="_blank" style="color: var(--accent-primary); font-weight: 700; text-decoration: underline;">SharePoint Projections Folder</a>.<br>
+          <div style="margin-top: 6px; font-weight: 700; color: var(--text-primary);">
+            ⚠️ Remember to save and upload any exported changes back to the same SharePoint folder!
+          </div>
+        </div>
+
         <div>
           <h2 class="sidebar-section-title">Timeline Setup</h2>
           <div class="filter-group" style="margin-bottom: 12px;">
@@ -139,107 +151,223 @@
           </div>
         </div>
         
-        <div>
-          <div class="sidebar-section-title">
-            <span>Personnel Roster</span>
-            <button class="btn btn-primary" style="padding: 4px 8px; font-size: 11px;" onclick="openPersonModal()">+ Add</button>
-          </div>
-          <div class="roster-list" id="personnelRoster">
-            <!-- Populated by JS -->
-          </div>
-        </div>
       </div>
     </aside>
     
     <!-- MAIN INTERFACE -->
     <main class="app-main">
       
-      <!-- METRICS DASHBOARD -->
-      <div class="metrics-wrapper" id="metricsWrapper">
-        <section class="metrics-container" id="metricsContainer">
-          <div class="metrics-grid">
-            <div class="metric-card">
-              <div class="metric-info">
-                <h3>Manning Fill Rate</h3>
-                <div class="metric-val" id="metricFillRate">0%</div>
-              </div>
-              <div class="metric-icon-wrapper">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-primary);"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              </div>
-            </div>
-            
-            <div class="metric-card">
-              <div class="metric-info">
-                <h3>Active Vacancies</h3>
-                <div class="metric-val" id="metricVacancies">0</div>
-              </div>
-              <div class="metric-icon-wrapper">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--danger);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
-              </div>
-            </div>
-            
-            <div class="metric-card">
-              <div class="metric-info" style="width: calc(100% - 36px);">
-                <h3>Group Fill Rates</h3>
-                <div id="metricGroupFillRates" style="font-size: 10px; font-weight: 700; line-height: 1.25; margin-top: 4px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; width: 100%; max-height: 38px; overflow-y: auto; color: var(--text-primary);">
-                  <!-- Dynamically populated -->
+      <!-- APP TABS NAVIGATION -->
+      <div class="app-tabs">
+        <button class="tab-btn active" id="tabBtnTimeline" onclick="switchTab('timeline')">Gantt Timeline</button>
+        <button class="tab-btn" id="tabBtnRoster" onclick="switchTab('roster')">Personnel Roster</button>
+      </div>
+
+      <!-- TAB PANEL: TIMELINE -->
+      <div class="tab-panel active" id="tabPanelTimeline">
+        <!-- METRICS DASHBOARD -->
+        <div class="metrics-wrapper" id="metricsWrapper">
+          <section class="metrics-container" id="metricsContainer">
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <div class="metric-info">
+                  <h3>Manning Fill Rate</h3>
+                  <div class="metric-val" id="metricFillRate">0%</div>
+                </div>
+                <div class="metric-icon-wrapper">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-primary);"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 </div>
               </div>
-              <div class="metric-icon-wrapper">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-primary);"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
-              </div>
-            </div>
-            
-            <div class="metric-card">
-              <div class="metric-info" style="width: calc(100% - 36px);">
-                <h3>Roster Breakdown</h3>
-                <div id="metricRosterSummary" style="font-size: 10px; font-weight: 700; line-height: 1.25; margin-top: 4px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; width: 100%; max-height: 38px; overflow-y: auto; color: var(--text-primary);">
-                  <!-- Dynamically populated -->
+              
+              <div class="metric-card">
+                <div class="metric-info">
+                  <h3>Active Vacancies</h3>
+                  <div class="metric-val" id="metricVacancies">0</div>
+                </div>
+                <div class="metric-icon-wrapper">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--danger);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
                 </div>
               </div>
-              <div class="metric-icon-wrapper">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--info);"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              
+              <div class="metric-card">
+                <div class="metric-info" style="width: calc(100% - 36px);">
+                  <h3>Group Fill Rates</h3>
+                  <div id="metricGroupFillRates" style="font-size: 10px; font-weight: 700; line-height: 1.25; margin-top: 4px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; width: 100%; max-height: 38px; overflow-y: auto; color: var(--text-primary);">
+                    <!-- Dynamically populated -->
+                  </div>
+                </div>
+                <div class="metric-icon-wrapper">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-primary);"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                </div>
+              </div>
+              
+              <div class="metric-card">
+                <div class="metric-info" style="width: calc(100% - 36px);">
+                  <h3>Roster Breakdown</h3>
+                  <div id="metricRosterSummary" style="font-size: 10px; font-weight: 700; line-height: 1.25; margin-top: 4px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; width: 100%; max-height: 38px; overflow-y: auto; color: var(--text-primary);">
+                    <!-- Dynamically populated -->
+                  </div>
+                </div>
+                <div class="metric-icon-wrapper">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--info);"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
               </div>
             </div>
+          </section>
+        </div>
+        
+        <!-- TIMELINE HEADER & CONFIG -->
+        <section class="timeline-nav-bar">
+          <div class="timeline-view-settings">
+            <div class="toggle-switch-group">
+              <button class="toggle-option active" id="ayToggleBtn" onclick="toggleTimelineMode(true)">Academic Year</button>
+              <button class="toggle-option" id="cyToggleBtn" onclick="toggleTimelineMode(false)">Calendar Year</button>
+            </div>
+            
+            <div class="timeline-year-nav">
+              <button class="btn btn-secondary" style="padding: 6px 10px;" onclick="shiftStartYear(-1)">◄ Prev</button>
+              <span class="current-year-display" id="timelineRangeDisplay">CY 2025 - 2027</span>
+              <button class="btn btn-secondary" style="padding: 6px 10px;" onclick="shiftStartYear(1)">Next ►</button>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; margin-left: 8px;">
+              <span class="filter-label" style="white-space: nowrap; font-size: 11px; font-weight: 600;">Timeline Span:</span>
+              <select class="filter-select" id="timelineSpanSelect" onchange="updateTimelineSpan(this.value)" style="width: auto; padding: 6px 10px; font-size: 12px; font-weight: 600; background-color: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: var(--border-radius-sm); outline: none; cursor: pointer;">
+                <option value="3">3 Years</option>
+                <option value="5">5 Years</option>
+                <option value="7">7 Years</option>
+              </select>
+            </div>
+          </div>
+          
+          <button class="btn btn-primary" onclick="openBilletModal()">
+            + Add New Billet
+          </button>
+        </section>
+        
+        <!-- GANTT TIMELINE CHART -->
+        <section class="gantt-scroll-wrapper">
+          <div class="gantt-table" id="ganttTable">
+            <!-- Timelines are rendered here -->
           </div>
         </section>
       </div>
-      
-      <!-- TIMELINE HEADER & CONFIG -->
-      <section class="timeline-nav-bar">
-        <div class="timeline-view-settings">
-          <div class="toggle-switch-group">
-            <button class="toggle-option active" id="ayToggleBtn" onclick="toggleTimelineMode(true)">Academic Year</button>
-            <button class="toggle-option" id="cyToggleBtn" onclick="toggleTimelineMode(false)">Calendar Year</button>
-          </div>
-          
-          <div class="timeline-year-nav">
-            <button class="btn btn-secondary" style="padding: 6px 10px;" onclick="shiftStartYear(-1)">◄ Prev</button>
-            <span class="current-year-display" id="timelineRangeDisplay">CY 2025 - 2027</span>
-            <button class="btn btn-secondary" style="padding: 6px 10px;" onclick="shiftStartYear(1)">Next ►</button>
-          </div>
 
-          <div style="display: flex; align-items: center; gap: 8px; margin-left: 8px;">
-            <span class="filter-label" style="white-space: nowrap; font-size: 11px; font-weight: 600;">Timeline Span:</span>
-            <select class="filter-select" id="timelineSpanSelect" onchange="updateTimelineSpan(this.value)" style="width: auto; padding: 6px 10px; font-size: 12px; font-weight: 600; background-color: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: var(--border-radius-sm); outline: none; cursor: pointer;">
-              <option value="3">3 Years</option>
-              <option value="5">5 Years</option>
-              <option value="7">7 Years</option>
-            </select>
+      <!-- TAB PANEL: PERSONNEL ROSTER -->
+      <div class="tab-panel" id="tabPanelRoster">
+        <div class="roster-tab-header">
+          <div class="roster-tab-title-group">
+            <h2>Personnel Management</h2>
+            <p>View and manage estimated tour arrival, departure, and active assignment records.</p>
+          </div>
+          <div class="roster-tab-actions">
+            <!-- View Mode Toggle -->
+            <div class="toggle-switch-group" style="margin-right: 8px;">
+              <button class="toggle-option active" id="rosterViewBoardBtn" onclick="toggleRosterView('board')">Board View</button>
+              <button class="toggle-option" id="rosterViewTableBtn" onclick="toggleRosterView('table')">Table View</button>
+            </div>
+            <div class="search-input-wrapper" style="width: 250px; position: relative;">
+              <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" class="search-input" id="rosterSearchFilter" placeholder="Search people..." oninput="renderPersonnelRoster()" style="padding-left: 36px;">
+            </div>
+            <button class="btn btn-primary" onclick="openPersonModal()">+ Add Personnel Record</button>
           </div>
         </div>
-        
-        <button class="btn btn-primary" onclick="openBilletModal()">
-          + Add New Billet
-        </button>
-      </section>
-      
-      <!-- GANTT TIMELINE CHART -->
-      <section class="gantt-scroll-wrapper">
-        <div class="gantt-table" id="ganttTable">
-          <!-- Timelines are rendered here -->
+
+        <!-- BOARD VIEW CONTAINER -->
+        <div class="roster-view-container" id="rosterBoardView">
+          <div class="roster-board">
+            
+            <!-- PAST COLUMN -->
+            <div class="board-column" id="colPast">
+              <div class="board-column-header">
+                <span class="column-title">Past Personnel</span>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="column-count" id="countPast">0</span>
+                  <select class="column-sort-select" id="sortPast" onchange="changeColumnSort('past', this.value)" style="background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-secondary); font-size: 10px; padding: 2px 6px; border-radius: 4px; outline: none; cursor: pointer; font-weight: 600;">
+                    <option value="name">Sort: A-Z</option>
+                    <option value="departure">Sort: Departure</option>
+                  </select>
+                  <button class="column-collapse-btn" onclick="togglePastColumn()" title="Collapse Column">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="board-column-header-collapsed" onclick="togglePastColumn()" title="Expand Column">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px;">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+                <div class="collapsed-title">Past Personnel</div>
+              </div>
+              <div class="board-cards-list" id="listPast">
+                <!-- Compact cards go here -->
+              </div>
+            </div>
+            
+            <!-- CURRENT COLUMN -->
+            <div class="board-column" id="colCurrent">
+              <div class="board-column-header">
+                <span class="column-title">Current Personnel</span>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="column-count" id="countCurrent">0</span>
+                  <select class="column-sort-select" id="sortCurrent" onchange="changeColumnSort('current', this.value)" style="background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-secondary); font-size: 10px; padding: 2px 6px; border-radius: 4px; outline: none; cursor: pointer; font-weight: 600;">
+                    <option value="name">Sort: A-Z</option>
+                    <option value="arrival">Sort: Arrival</option>
+                    <option value="departure">Sort: Departure</option>
+                  </select>
+                </div>
+              </div>
+              <div class="board-cards-list" id="listCurrent">
+                <!-- Compact cards go here -->
+              </div>
+            </div>
+            
+            <!-- PIPELINE COLUMN -->
+            <div class="board-column" id="colPipeline">
+              <div class="board-column-header">
+                <span class="column-title">Pipeline / Inbound</span>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="column-count" id="countPipeline">0</span>
+                  <select class="column-sort-select" id="sortPipeline" onchange="changeColumnSort('pipeline', this.value)" style="background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-secondary); font-size: 10px; padding: 2px 6px; border-radius: 4px; outline: none; cursor: pointer; font-weight: 600;">
+                    <option value="name">Sort: A-Z</option>
+                    <option value="arrival">Sort: Arrival</option>
+                  </select>
+                </div>
+              </div>
+              <div class="board-cards-list" id="listPipeline">
+                <!-- Compact cards go here -->
+              </div>
+            </div>
+            
+          </div>
         </div>
-      </section>
+
+        <!-- TABLE VIEW CONTAINER -->
+        <div class="roster-view-container" id="rosterTableView" style="display: none;">
+          <div class="roster-table-container">
+            <table class="roster-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Rank</th>
+                  <th>Type</th>
+                  <th>Role</th>
+                  <th>Career Field</th>
+                  <th>Tour Arrival</th>
+                  <th>Tour Departure</th>
+                  <th>Active Billet</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="personnelTableBody">
+                <!-- Rendered dynamically by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
       
     </main>
     
@@ -394,10 +522,32 @@
             </div>
           </div>
           <div style="margin-top: 20px; display: flex; justify-content: space-between;">
-            <button type="button" class="btn btn-danger" id="deletePersonBtn" style="display: none;" onclick="deletePerson()">Delete Person</button>
-            <button type="submit" class="btn btn-primary" style="margin-left: auto;">Save Person</button>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn btn-danger" id="deletePersonBtn" style="display: none;" onclick="deletePerson()">Delete Person</button>
+              <button type="button" class="btn btn-secondary" id="duplicatePersonBtn" style="display: none;" onclick="duplicatePerson()">Copy Person</button>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Person</button>
           </div>
         </form>
+
+        <!-- CONTACT HISTORY LOG SECTION -->
+        <div id="personContactLogWrapper" style="display: none; margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+          <h4 style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-primary); margin-bottom: 12px;">Contact History Log</h4>
+          
+          <div id="contactLogList" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; padding-right: 4px;">
+            <!-- Log entries rendered dynamically -->
+          </div>
+          
+          <div style="background-color: var(--bg-main); border: 1px solid var(--border-color); padding: 12px; border-radius: var(--border-radius-sm); display: flex; flex-direction: column; gap: 8px;">
+            <span style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">Quick Add Log Entry</span>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="contactLogAuthor" class="form-control" placeholder="Initials/Author" style="width: 110px; font-size: 12px; padding: 6px 10px;">
+              <input type="date" id="contactLogDate" class="form-control" style="width: 140px; font-size: 12px; padding: 6px 10px;">
+            </div>
+            <textarea id="contactLogNotes" class="form-control" rows="2" placeholder="Enter contact notes..." style="font-size: 12px; padding: 6px 10px; resize: vertical;"></textarea>
+            <button type="button" class="btn btn-secondary" onclick="addContactLogEntry()" style="padding: 6px 12px; font-size: 11px; align-self: flex-end;">Add Entry</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -485,6 +635,29 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('csvImportModal')">Close</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- FIRST-TIME USAGE WELCOME DIALOG MODAL -->
+  <div class="modal-overlay" id="welcomeModal">
+    <div class="modal-card" style="width: 480px; max-width: 95%;">
+      <div class="modal-header">
+        <h3 class="modal-title">Welcome to Manning Intelligence</h3>
+        <button class="modal-close" onclick="closeModal('welcomeModal')">&times;</button>
+      </div>
+      <div class="modal-body" style="font-size: 13px; line-height: 1.5; color: var(--text-secondary);">
+        <p style="margin-bottom: 12px;">To get started, please import the most recent Manning JSON database file.</p>
+        <p style="margin-bottom: 16px;">The database file is located <a href="https://usafa0.sharepoint.com/sites/DFME/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FDFME%2FShared%20Documents%2FOperations%2FPersonnel%2FManning%20Projections&viewid=6adda10f%2D99bd%2D452a%2Dbb7f%2D69b2cfee8787" target="_blank" style="color: var(--accent-primary); font-weight: 700; text-decoration: underline;">here on SharePoint</a>.</p>
+        
+        <div style="background-color: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); padding: 12px; border-radius: var(--border-radius-sm); font-size: 12px; color: var(--text-primary); margin-bottom: 20px; line-height: 1.4;">
+          <strong>Important Coordination:</strong> Please ensure that any exported JSON changes you save are uploaded back into this same SharePoint folder to keep the database synced for the team.
+        </div>
+        
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button class="btn btn-secondary" onclick="closeModal('welcomeModal')">Dismiss</button>
+          <button class="btn btn-primary" onclick="closeModal('welcomeModal'); document.getElementById('importFile').click();">Import JSON File</button>
+        </div>
       </div>
     </div>
   </div>
